@@ -3,7 +3,7 @@ import numpy
 import time
 
 def load_labels(labels_path: str):
-    with labels_path.open() as labels_file:
+    with open(labels_path) as labels_file:
         labels = labels_file.read()
     labels = labels.split("\n")
     labels = list(map(lambda x: x.strip(), labels))
@@ -52,7 +52,7 @@ class DNN:
         output_layers = self._model.getUnconnectedOutLayers()
         output_layer_names = []
         for i in output_layers:
-            output_layer_names.append(layers_names[i[0]-1])
+            output_layer_names.append(layers_names[i-1])
         return output_layer_names
 
     def inference(self, inputs) -> numpy.array:
@@ -61,7 +61,9 @@ class DNN:
 
 class Yolo(DNN):
     
-    def __init__(self, netCfgPath: str, weightsPathOrType, labels:str, size:list, conf_threshold:float=0.5, nms_threshold:float=0.3, scale:float = 1./255., swapRB:bool = True):
+    def __init__(self, netCfgPath: str, weightsPathOrType, labels:str, size:list, 
+                 conf_threshold:float=0.5, nms_threshold:float=0.3, 
+                 scale:float = 1./255., swapRB:bool = True):
         DNN.__init__(self, netCfgPath, weightsPathOrType, labels)
         self._size = size
         self._swapRB = swapRB
@@ -109,23 +111,27 @@ class Yolo(DNN):
         if len(indices) > 0:
             for i in range(len(indices)):
                 box = boxes[i]
-                x = box[0]
-                y = box[1]
-                w = box[2]
-                h = box[3]
+                box[0] = int(box[0])
+                box[1] = int(box[1])
+                box[2] = int(box[2])
+                box[3] = int(box[3])
                 detections.append((box, confidences[i], self._labels[0]))
         if detections:
             return detections
 
 if __name__ == "__main__":
-    net = Yolo("yolo-tome_esse_modelo_seu_pau_no_cu.cfg", "yolo-tome_esse_modelo_seu_pau_no_cu_last.weights", ['wood_plate'], (512,288))
+    net = Yolo("/home/matbarcelo/Projetos/Madesa/wood_plate/yolo-tome_esse_modelo_seu_pau_no_cu.cfg",
+               "/home/matbarcelo/Projetos/Madesa/wood_plate/backup/yolo-tome_esse_modelo_seu_pau_no_cu_last.weights", 
+               ['wood_plate'], (512,288), 0.5, 0.4)
     net.set_backend(cv2.dnn.DNN_BACKEND_OPENCV, cv2.dnn.DNN_TARGET_OPENCL)
-    img = cv2.imread('data/obj_train_data/frame_000000.PNG')
+    img = cv2.imread('/media/data/Projetos/Madesa/wood_plate/data/obj_train_data/frame_000000.PNG')
 
+    
     start = time.time()
     result = net.inference(img)
     end = time.time()
     print(end-start)
+    
     for det in result:
         cv2.rectangle(img, det[0], (0,255,0))
     cv2.imwrite("det.png", img)
