@@ -120,17 +120,19 @@ class Yolo(DNN):
             return detections
 
 if __name__ == "__main__":
-    net = Yolo("/home/matbarcelo/Projetos/Madesa/wood_plate/yolo-tome_esse_modelo_seu_pau_no_cu.cfg",
-               "/home/matbarcelo/Projetos/Madesa/wood_plate/backup/yolo-tome_esse_modelo_seu_pau_no_cu_last.weights", 
+    import os
+    basePath = "D:/Datasets/madesa"
+    net = Yolo(os.path.join(basePath,"yolo-tome_esse_modelo_seu_pau_no_cu.cfg"),
+               os.path.join(basePath,"backup/yolo-tome_esse_modelo_seu_pau_no_cu_last.weights"), 
                ['wood_plate'], (512,288), 0.5, 0.4)
     net.set_backend(cv2.dnn.DNN_BACKEND_OPENCV, cv2.dnn.DNN_TARGET_OPENCL)
-    img = cv2.imread('/media/data/Projetos/Madesa/wood_plate/data/obj_train_data/frame_000000.PNG')
+    img = cv2.imread(os.path.join(basePath,'data/obj_train_data/frame_000000.PNG'))
 
-    
-    start = time.time()
-    result = net.inference(img)
-    end = time.time()
-    print(end-start)
+    for i in range(100):
+        start = time.time()
+        result = net.inference(img)
+        end = time.time()
+        print(end-start)
     
     for det in result:
         cv2.rectangle(img, det[0], (0,255,0))

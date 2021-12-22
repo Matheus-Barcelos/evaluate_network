@@ -1,8 +1,6 @@
 import cv2
 import os
-import sys
 import configparser
-import dnn
 
 def readListFromFile(filePath):
     list = []
@@ -41,11 +39,29 @@ class DatasetDarknet:
         return files
     
     def _get_item(self, idx, dataset):
-        image = dataset[idx]
-        
-        filePathSplitted = os.path.splitext(image)
+        imagePath = dataset[idx]
+        filePathSplitted = os.path.splitext(imagePath)
+        image = cv2.imread(imagePath)
         annotations = []
         annotationFile = open(filePathSplitted[0]+".txt", 'r')
+        for l in annotationFile:
+            l = l.rstrip()
+            info = l.split(" ")
+            annotation = {}
+            annotation["label"] = self._labels[int(info[0])]
+
+            x = int(float(info[1])*image.shape[1])
+            w = int(float(info[3])*image.shape[1])
+            x = int(x - (w/2))
+
+            y = int(float(info[2])*image.shape[0])
+            h = int(float(info[4])*image.shape[0])
+            y = int(y - (h/2))
+            annotation["roi"] = [x,y,w,h]
+            annotations.append(annotation)
+        
+        return image, annotations
+
         
             
     def len(self):
@@ -53,15 +69,29 @@ class DatasetDarknet:
     
     def get(self, idx):
         if(idx < len(self._train)):
-            return self._train[idx]
+            return self._get_item(idx, self._train)
         else:
-            return self._test[idx-len(self._train)]
+            return self._get_item(idx-len(self._train), self._test)
+
+    def len_train(self):
+        return len(self._train)
         
-    def lenTest(self):
+    def get_train(self, idx):
+        return self._get_item(idx, self._train)
+
+    def len_test(self):
         return len(self._test)
+        
+    def get_test(self, idx):
+        return self._get_item(idx, self._test)
+        
     
     
 
 if __name__=="__main__":
-    dataset = DatasetDarknet("/media/data/Projetos/Madesa/wood_plate/obj.data")
-    dataset._get_item(0, dataset._train)
+    basePath = "D:/Datasets/madesa"
+    dataset = DatasetDarknet(os.path.join(basePath,"obj.data"))
+    image, annotations = dataset.get_test(10)
+    for annotation in annotations:
+        cv2.rectangle(image, annotation["roi"], (0,255,0))
+    cv2.imwrite("anot.png", image)
