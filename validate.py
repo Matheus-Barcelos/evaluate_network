@@ -2,7 +2,7 @@ import dnn
 import dataset
 import os
 import numpy
-import cv2
+from hungerian import hungarian_algorithm
 
 
 def calcIOU(box1, box2):
@@ -27,8 +27,8 @@ def calcIOU(box1, box2):
     
 
 def valid(model, data):
-    tpP = fpP = 0
-    for idx in [20]:
+    tpP = fpP = fnP = 0
+    for idx in range(data.len_test()):
         image, annotations = data.get_test(idx)
         detections = model.inference(image)
 
@@ -39,29 +39,29 @@ def valid(model, data):
             for j in range(len(detections)):
                 iouMat[i,j] = calcIOU(detections[j]["roi"], annotations[i]["roi"])
         
-        print(iouMat)
-        
         comp = 1-iouMat #convertendo problema de maximização em problema de minimização
+        matches = hungarian_algorithm(comp)
+        filteredMatches = []
+        for i,j in matches:
+            if(iouMat[i,j] >= 0.7 and annotations[i]["label"] == detections[j]["label"]):
+                filteredMatches.append((i,j))
+        
+        tpP += len(filteredMatches)
+        fpP += len(detections) - len(filteredMatches)
+        fnP += len(annotations) - len(filteredMatches)
 
-        #for det in annotations:
-        #    cv2.rectangle(image, det["roi"], (0,255,0))
+    return tpP, fpP, fnP
 
-        #for det in detections:
-        #    cv2.rectangle(image, det["roi"], (0,0,255))
-        #cv2.imwrite("det.png", image)
+
+def print_metrics(tpP, fpP, fnP):
+    
+    f1score = tpP / (tpP+0.5*(fpP+fnP))
+    print(tpP, fpP, fnP)
+    print("precision: {}".format(tpP/(tpP+fpP)))
+    print("recall: {}".format(tpP/(tpP+fnP)))
+    print("f1score: {}".format(f1score))
         
         
-
-
-
-
-
-
-
-
-
-
-
 if __name__ == "__main__":
     basePath = "D:/Datasets/madesa"
     data = dataset.DatasetDarknet(os.path.join(basePath,"obj.data"))
@@ -69,5 +69,6 @@ if __name__ == "__main__":
                      os.path.join(basePath,"backup/yolo-tome_esse_modelo_seu_pau_no_cu_last.weights"), 
                      data.get_labels(), (512,288), 0.5, 0.3)
     
-    valid(model, data)
+    tp, fp, fn = valid(model, data)
+    print_metrics(tp, fp, fn)
     
