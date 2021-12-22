@@ -99,8 +99,8 @@ class Yolo(DNN):
                     center_y = int(detection[1] * Height)
                     w = int(detection[2] * Width)
                     h = int(detection[3] * Height)
-                    x = center_x - w / 2
-                    y = center_y - h / 2
+                    x = int(center_x - w / 2)
+                    y = int(center_y - h / 2)
                     class_ids.append(class_id)
                     confidences.append(float(confidence))
                     boxes.append([x, y, w, h])
@@ -110,30 +110,31 @@ class Yolo(DNN):
 
         if len(indices) > 0:
             for i in range(len(indices)):
-                box = boxes[i]
-                box[0] = int(box[0])
-                box[1] = int(box[1])
-                box[2] = int(box[2])
-                box[3] = int(box[3])
-                detections.append((box, confidences[i], self._labels[0]))
-        if detections:
-            return detections
+                detection = {}
+                detection["confidence"] = confidences[i]
+                detection["label"] = self._labels[0]
+                detection["roi"] = boxes[i]
+
+                detections.append(detection)
+
+        
+        return detections
 
 if __name__ == "__main__":
     import os
     basePath = "D:/Datasets/madesa"
     net = Yolo(os.path.join(basePath,"yolo-tome_esse_modelo_seu_pau_no_cu.cfg"),
-               os.path.join(basePath,"backup/yolo-tome_esse_modelo_seu_pau_no_cu_last.weights"), 
-               ['wood_plate'], (512,288), 0.5, 0.4)
+               os.path.join(basePath,"backup/yolo-tome_esse_modelo_seu_pau_no_cu_30000.weights"), 
+               ['wood_plate'], (512,288), 0.5, 0.3)
     net.set_backend(cv2.dnn.DNN_BACKEND_OPENCV, cv2.dnn.DNN_TARGET_OPENCL)
     img = cv2.imread(os.path.join(basePath,'data/obj_train_data/frame_000000.PNG'))
 
-    for i in range(100):
-        start = time.time()
-        result = net.inference(img)
-        end = time.time()
-        print(end-start)
+    
+    start = time.time()
+    result = net.inference(img)
+    end = time.time()
+    print(end-start)
     
     for det in result:
-        cv2.rectangle(img, det[0], (0,255,0))
+        cv2.rectangle(img, det["roi"], (0,255,0))
     cv2.imwrite("det.png", img)

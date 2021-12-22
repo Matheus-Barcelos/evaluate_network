@@ -62,8 +62,6 @@ class DatasetDarknet:
         
         return image, annotations
 
-        
-            
     def len(self):
         return len(self._train)+len(self._test)
     
@@ -84,10 +82,11 @@ class DatasetDarknet:
         
     def get_test(self, idx):
         return self._get_item(idx, self._test)
-        
-    
-    
 
+    def get_labels(self):
+        return self._labels
+    
+    
 if __name__=="__main__":
     basePath = "D:/Datasets/madesa"
     dataset = DatasetDarknet(os.path.join(basePath,"obj.data"))
