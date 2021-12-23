@@ -76,12 +76,19 @@ class DatasetDarknet:
         
     def get_train(self, idx):
         return self._get_item(idx, self._train)
+    
+    def get_train_image_name(self, idx):
+        return os.path.basename(self._train[idx])
 
     def len_test(self):
         return len(self._test)
         
     def get_test(self, idx):
         return self._get_item(idx, self._test)
+
+    def get_test_image_name(self, idx):
+        return os.path.basename(self._test[idx])
+
 
     def get_labels(self):
         return self._labels
@@ -91,6 +98,7 @@ if __name__=="__main__":
     basePath = "D:/Datasets/madesa"
     dataset = DatasetDarknet(os.path.join(basePath,"obj.data"))
     image, annotations = dataset.get_test(10)
+    print(dataset.get_test_image_name(0))
     for annotation in annotations:
         cv2.rectangle(image, annotation["roi"], (0,255,0))
     cv2.imwrite("anot.png", image)

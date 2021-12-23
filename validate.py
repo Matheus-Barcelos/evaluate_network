@@ -3,6 +3,8 @@ import dataset
 import os
 import numpy
 from hungerian import hungarian_algorithm
+import cv2
+import tqdm
 
 
 def calcIOU(box1, box2):
@@ -26,9 +28,16 @@ def calcIOU(box1, box2):
     return inter_square/union_square
     
 
-def valid(model, data):
+def valid(model, data, threshold=0.6, write_images=False):
     tpP = fpP = fnP = 0
-    for idx in range(data.len_test()):
+
+    if write_images:
+        if not os.path.exists("false_negatives"):
+            os.makedirs("false_negatives")
+        if not os.path.exists("false_positives"):
+            os.makedirs("false_positives")
+
+    for idx in tqdm.tqdm(range(data.len_test())):
         image, annotations = data.get_test(idx)
         detections = model.inference(image)
 
@@ -43,9 +52,20 @@ def valid(model, data):
         matches = hungarian_algorithm(comp)
         filteredMatches = []
         for i,j in matches:
-            if(iouMat[i,j] >= 0.7 and annotations[i]["label"] == detections[j]["label"]):
+            if(iouMat[i,j] >= threshold and annotations[i]["label"] == detections[j]["label"]):
                 filteredMatches.append((i,j))
         
+        if write_images:
+            for det in annotations:
+                cv2.rectangle(image, det["roi"], (0,255,0))
+            for det in detections:
+                cv2.rectangle(image, det["roi"], (0,0,255))
+
+            if(len(filteredMatches) != len(annotations)):
+                cv2.imwrite("false_negatives/"+data.get_test_image_name(idx), image)
+            if(len(filteredMatches) != len(detections)):
+                cv2.imwrite("false_positives/"+data.get_test_image_name(idx), image)
+
         tpP += len(filteredMatches)
         fpP += len(detections) - len(filteredMatches)
         fnP += len(annotations) - len(filteredMatches)
@@ -63,11 +83,12 @@ def print_metrics(tpP, fpP, fnP):
         
         
 if __name__ == "__main__":
-    basePath = "D:/Datasets/madesa"
+    basePath = "D:/Datasets/tensorflow-great-barrier-reef/train_images"
     data = dataset.DatasetDarknet(os.path.join(basePath,"obj.data"))
-    model = dnn.Yolo(os.path.join(basePath,"yolo-tome_esse_modelo_seu_pau_no_cu.cfg"),
-                     os.path.join(basePath,"backup/yolo-tome_esse_modelo_seu_pau_no_cu_last.weights"), 
+    model = dnn.Yolo(os.path.join(basePath,"yolo-star_fish_detector_v8.cfg"),
+                     os.path.join(basePath,"yolo-star_fish_detector_v8.weights"), 
                      data.get_labels(), (512,288), 0.5, 0.3)
+    model.set_backend(cv2.dnn.DNN_BACKEND_OPENCV, cv2.dnn.DNN_TARGET_OPENCL)
     
     tp, fp, fn = valid(model, data)
     print_metrics(tp, fp, fn)

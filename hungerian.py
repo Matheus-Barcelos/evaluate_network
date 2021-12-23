@@ -99,6 +99,8 @@ def adjust_matrix(mat, cover_rows, cover_cols):
 
 def hungarian_algorithm(mat): 
     dim = min(mat.shape[0], mat.shape[1])
+    if(dim == 0):
+        return []
     cur_mat = mat
 
     #Step 1 - Every column and every row subtract its internal minimum
