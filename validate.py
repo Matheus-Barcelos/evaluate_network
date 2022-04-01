@@ -83,7 +83,7 @@ def print_metrics(tpP, fpP, fnP):
         
         
 if __name__ == "__main__":
-    basePath = "D:/Datasets/tensorflow-great-barrier-reef/train_images"
+    basePath = "/data/Dataset/Pessoal/tensorflow-great-barrier-reef/train_images"
     data = dataset.DatasetDarknet(os.path.join(basePath,"obj.data"))
     model = dnn.Yolo(os.path.join(basePath,"yolo-star_fish_detector_v8.cfg"),
                      os.path.join(basePath,"yolo-star_fish_detector_v8.weights"), 
