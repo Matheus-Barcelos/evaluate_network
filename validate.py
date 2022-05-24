@@ -5,6 +5,7 @@ import numpy
 from hungerian import hungarian_algorithm
 import cv2
 import tqdm
+import sys
 
 
 def calcIOU(box1, box2):
@@ -75,21 +76,26 @@ def valid(model, data, threshold=0.6, write_images=False):
 
 def print_metrics(tpP, fpP, fnP):
     
-    f1score = tpP / (tpP+0.5*(fpP+fnP))
-    print(tpP, fpP, fnP)
-    print("precision: {}".format(tpP/(tpP+fpP)))
-    print("recall: {}".format(tpP/(tpP+fnP)))
-    print("f1score: {}".format(f1score))
+    
+    precision = tpP/(tpP+fpP)
+    recall = tpP/(tpP+fnP)
+    f1score = 2*((precision*recall)/(precision+recall))
+
+    output = "TP: {} FP: {} FN: {}\nprecision: {}\nrecall: {}\nf1score: {}".format(tpP, fpP, fnP, precision, recall, f1score)
+    print(output)
+    file= open("results.txt",'w')
+    file.write(output)
+    file.close()
         
         
 if __name__ == "__main__":
-    basePath = "/data/Dataset/Pessoal/tensorflow-great-barrier-reef/train_images"
+    basePath = sys.argv[1]
     data = dataset.DatasetDarknet(os.path.join(basePath,"obj.data"))
-    model = dnn.Yolo(os.path.join(basePath,"yolo-star_fish_detector_v8.cfg"),
-                     os.path.join(basePath,"yolo-star_fish_detector_v8.weights"), 
-                     data.get_labels(), (512,288), 0.5, 0.3)
+    model = dnn.Yolo(os.path.join(basePath,sys.argv[2]),
+                     os.path.join(basePath,sys.argv[3]), 
+                     data.get_labels(), (int(sys.argv[4]),int(sys.argv[5])), 0.5, 0.3)
     model.set_backend(cv2.dnn.DNN_BACKEND_OPENCV, cv2.dnn.DNN_TARGET_OPENCL)
     
-    tp, fp, fn = valid(model, data)
+    tp, fp, fn = valid(model, data, 0.6, write_images=True)
     print_metrics(tp, fp, fn)
     

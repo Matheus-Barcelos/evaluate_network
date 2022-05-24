@@ -37,9 +37,6 @@ class DNN:
             self._type = weightsPathOrType
         self._labels = labels
         
-        
-        
-        
 
     def set_backend(self, backend:int, target:int):
         self._model.setPreferableBackend(backend)
@@ -122,12 +119,13 @@ class Yolo(DNN):
 
 if __name__ == "__main__":
     import os
-    basePath = "D:/Datasets/madesa"
-    net = Yolo(os.path.join(basePath,"yolo-tome_esse_modelo_seu_pau_no_cu.cfg"),
-               os.path.join(basePath,"backup/yolo-tome_esse_modelo_seu_pau_no_cu_30000.weights"), 
-               ['wood_plate'], (512,288), 0.5, 0.3)
+    import sys
+    basePath = sys.argv[1]
+    net = Yolo(sys.argv[2],
+               sys.argv[3], 
+               sys.argv[4].split(","), (int(sys.argv[5]),int(sys.argv[6])), 0.5, 0.3)
     net.set_backend(cv2.dnn.DNN_BACKEND_OPENCV, cv2.dnn.DNN_TARGET_OPENCL)
-    img = cv2.imread(os.path.join(basePath,'data/obj_train_data/frame_000000.PNG'))
+    img = cv2.imread(sys.argv[7])
 
     
     start = time.time()
