@@ -95,7 +95,8 @@ class DatasetDarknet:
     
     
 if __name__=="__main__":
-    basePath = "D:/Datasets/madesa"
+    import sys
+    basePath = sys.argv[1]
     dataset = DatasetDarknet(os.path.join(basePath,"obj.data"))
     image, annotations = dataset.get_test(10)
     print(dataset.get_test_image_name(0))
