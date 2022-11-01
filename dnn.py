@@ -90,35 +90,46 @@ class Yolo(DNN):
                 class_id = numpy.argmax(scores)
                 confidence = detection[4]
                 if confidence > self._conf_threshold:
-                    center_x = int(detection[0] * Width)
-                    center_y = int(detection[1] * Height)
-                    w = int(detection[2] * Width)
-                    h = int(detection[3] * Height)
-                    x = int(center_x - w / 2)
-                    y = int(center_y - h / 2)
                     class_ids.append(class_id)
                     confidences.append(scores[class_id])
-                    boxes.append([x, y, w, h])
+                    boxes.append(detection[0:4])
         
-        for i, box in enumerate(boxes):
-            detection = {}
-            detection["confidence"] = confidences[i]
-            detection["label"] = self._labels[class_ids[i]]
-            detection["roi"] = box
+        # for i, box in enumerate(boxes):
+        #     detection = {}
+        #     detection["confidence"] = confidences[i]
+        #     detection["label"] = self._labels[class_ids[i]]
 
-            detections.append(detection)
+        #     center_x = int(box[0] * Width)
+        #     center_y = int(box[1] * Height)
+        #     w = int(box[2] * Width)
+        #     h = int(box[3] * Height)
+        #     x = int(center_x - w / 2)
+        #     y = int(center_y - h / 2)
 
-        # indices = cv2.dnn.NMSBoxes(boxes, confidences, self._conf_threshold,
-        #                            self._nms_threshold, top_k=1)
+        #     detection["roi"] = [x,y,w,h]
 
-        # if len(indices) > 0:
-        #     for i in range(len(indices)):
-        #         detection = {}
-        #         detection["confidence"] = confidences[i]
-        #         detection["label"] = self._labels[class_ids[i]]
-        #         detection["roi"] = boxes[i]
+        #     detections.append(detection)
 
-        #         detections.append(detection)
+        indices = cv2.dnn.NMSBoxes(boxes, confidences, self._conf_threshold,
+                                   self._nms_threshold)
+
+        if len(indices) > 0:
+            for i in indices:
+                detection = {}
+                detection["confidence"] = confidences[i]
+                detection["label"] = self._labels[class_ids[i]]
+                box = boxes[i]
+
+                center_x = int(box[0] * Width)
+                center_y = int(box[1] * Height)
+                w = int(box[2] * Width)
+                h = int(box[3] * Height)
+                x = int(center_x - w / 2)
+                y = int(center_y - h / 2)
+
+                detection["roi"] = [x,y,w,h]
+
+                detections.append(detection)
 
         
         return detections
