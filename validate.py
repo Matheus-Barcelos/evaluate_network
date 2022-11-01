@@ -93,8 +93,8 @@ if __name__ == "__main__":
     data = dataset.DatasetDarknet(os.path.join(basePath,"obj.data"))
     model = dnn.Yolo(os.path.join(basePath,sys.argv[2]),
                      os.path.join(basePath,sys.argv[3]), 
-                     data.get_labels(), (int(sys.argv[4]),int(sys.argv[5])), 0.5, 0.3)
-    model.set_backend(cv2.dnn.DNN_BACKEND_OPENCV, cv2.dnn.DNN_TARGET_OPENCL)
+                     data.get_labels(), (int(sys.argv[4]),int(sys.argv[5])), 0.5, 0.2)
+    model.set_backend(cv2.dnn.DNN_BACKEND_CUDA, cv2.dnn.DNN_TARGET_CUDA)
     
     tp, fp, fn = valid(model, data, 0.6, write_images=True)
     print_metrics(tp, fp, fn)

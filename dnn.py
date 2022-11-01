@@ -71,8 +71,6 @@ class Yolo(DNN):
 
 
     def inference(self, inputs)-> numpy.array:
-        if not isinstance(inputs, numpy.ndarray) and len(inputs) == 1:
-            inputs = inputs.pop()
         
         blob = cv2.dnn.blobFromImage(inputs, self._scale, self._size,
                                      swapRB=self._swapRB, crop=False)
@@ -90,7 +88,7 @@ class Yolo(DNN):
             for detection in out:
                 scores = detection[5:]
                 class_id = numpy.argmax(scores)
-                confidence = scores[class_id]
+                confidence = detection[4]
                 if confidence > self._conf_threshold:
                     center_x = int(detection[0] * Width)
                     center_y = int(detection[1] * Height)
@@ -99,20 +97,28 @@ class Yolo(DNN):
                     x = int(center_x - w / 2)
                     y = int(center_y - h / 2)
                     class_ids.append(class_id)
-                    confidences.append(float(confidence))
+                    confidences.append(scores[class_id])
                     boxes.append([x, y, w, h])
+        
+        for i, box in enumerate(boxes):
+            detection = {}
+            detection["confidence"] = confidences[i]
+            detection["label"] = self._labels[class_ids[i]]
+            detection["roi"] = box
 
-        indices = cv2.dnn.NMSBoxes(boxes, confidences, self._conf_threshold,
-                                   self._nms_threshold)
+            detections.append(detection)
 
-        if len(indices) > 0:
-            for i in range(len(indices)):
-                detection = {}
-                detection["confidence"] = confidences[i]
-                detection["label"] = self._labels[0]
-                detection["roi"] = boxes[i]
+        # indices = cv2.dnn.NMSBoxes(boxes, confidences, self._conf_threshold,
+        #                            self._nms_threshold, top_k=1)
 
-                detections.append(detection)
+        # if len(indices) > 0:
+        #     for i in range(len(indices)):
+        #         detection = {}
+        #         detection["confidence"] = confidences[i]
+        #         detection["label"] = self._labels[class_ids[i]]
+        #         detection["roi"] = boxes[i]
+
+        #         detections.append(detection)
 
         
         return detections
@@ -120,12 +126,11 @@ class Yolo(DNN):
 if __name__ == "__main__":
     import os
     import sys
-    basePath = sys.argv[1]
-    net = Yolo(sys.argv[2],
-               sys.argv[3], 
-               sys.argv[4].split(","), (int(sys.argv[5]),int(sys.argv[6])), 0.5, 0.3)
+    net = Yolo(sys.argv[1],
+               sys.argv[2], 
+               sys.argv[3].split(","), (int(sys.argv[4]),int(sys.argv[5])), 0.5, 0.2)
     net.set_backend(cv2.dnn.DNN_BACKEND_OPENCV, cv2.dnn.DNN_TARGET_OPENCL)
-    img = cv2.imread(sys.argv[7])
+    img = cv2.imread(sys.argv[6])
 
     
     start = time.time()
@@ -136,3 +141,5 @@ if __name__ == "__main__":
     for det in result:
         cv2.rectangle(img, det["roi"], (0,255,0))
     cv2.imwrite("det.png", img)
+    cv2.imshow("det", img)
+    cv2.waitKey()
