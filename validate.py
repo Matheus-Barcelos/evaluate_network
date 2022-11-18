@@ -79,7 +79,10 @@ def print_metrics(tpP, fpP, fnP):
     
     precision = tpP/(tpP+fpP)
     recall = tpP/(tpP+fnP)
-    f1score = 2*((precision*recall)/(precision+recall))
+    if precision+recall > 0:
+        f1score = 2*((precision*recall)/(precision+recall))
+    else:
+        f1score = 0
 
     output = "TP: {} FP: {} FN: {}\nprecision: {}\nrecall: {}\nf1score: {}".format(tpP, fpP, fnP, precision, recall, f1score)
     print(output)
