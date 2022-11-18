@@ -1,2 +1,6 @@
-/*.png
-/__pycache__
+**/*.png
+**/__pycache__
+false_positives
+false_negatives
+results.txt
+.vscode
