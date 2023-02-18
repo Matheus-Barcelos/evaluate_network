@@ -116,7 +116,7 @@ class Yolo(DNN):
         if len(indices) > 0:
             for i in indices:
                 detection = {}
-                detection["confidence"] = confidences[i]
+                detection["confidence"] = float(confidences[i])
                 detection["label"] = self._labels[class_ids[i]]
                 box = boxes[i]
 
@@ -134,11 +134,27 @@ class Yolo(DNN):
         
         return detections
 
+
+def check_if_type(weightsOrType):
+    if weightsOrType == "onnx":
+        return Yolo.ONNX
+    elif weightsOrType == "tf":
+        return Yolo.TENSORFLOW
+    elif weightsOrType == "torch":
+        return Yolo.TORCH
+    else: return weightsOrType
+    
+
+
 if __name__ == "__main__":
     import os
     import sys
+
+    weightsOrType = check_if_type(sys.argv[2])
+
+
     net = Yolo(sys.argv[1],
-               sys.argv[2], 
+               weightsOrType, 
                sys.argv[3].split(","), (int(sys.argv[4]),int(sys.argv[5])), 0.5, 0.2)
     net.set_backend(cv2.dnn.DNN_BACKEND_OPENCV, cv2.dnn.DNN_TARGET_OPENCL)
     img = cv2.imread(sys.argv[6])

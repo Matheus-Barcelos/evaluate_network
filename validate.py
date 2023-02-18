@@ -6,6 +6,7 @@ from hungerian import hungarian_algorithm
 import cv2
 import tqdm
 import sys
+import json
 
 
 def calcIOU(box1, box2):
@@ -30,13 +31,15 @@ def calcIOU(box1, box2):
     
 
 def valid(model, data, threshold=0.6, write_images=False):
-    tpP = fpP = fnP = 0
+    okImages = tpP = fpP = fnP = 0
 
     if write_images:
         if not os.path.exists("false_negatives"):
             os.makedirs("false_negatives")
         if not os.path.exists("false_positives"):
             os.makedirs("false_positives")
+        if not os.path.exists("ok_images"):
+            os.makedirs("ok_images")
 
     for idx in tqdm.tqdm(range(data.len_test())):
         image, annotations = data.get_test(idx)
@@ -62,16 +65,35 @@ def valid(model, data, threshold=0.6, write_images=False):
             for det in detections:
                 cv2.rectangle(image, det["roi"], (0,0,255))
 
+            file_name = os.path.splitext(data.get_test_image_name(idx))[0]
             if(len(filteredMatches) != len(annotations)):
                 cv2.imwrite("false_negatives/"+data.get_test_image_name(idx), image)
+                with open("false_negatives/"+file_name+".json", "w") as file:
+                    metadata={}
+                    metadata["annotation"]=annotations
+                    metadata["detections"]=det
+                    json.dump(metadata, file)
             if(len(filteredMatches) != len(detections)):
                 cv2.imwrite("false_positives/"+data.get_test_image_name(idx), image)
+                with open("false_positives/"+file_name+".json", "w") as file:
+                    metadata={}
+                    metadata["annotation"]=annotations
+                    metadata["detections"]=det
+                    json.dump(metadata, file)
+            if(len(filteredMatches) == len(detections) == len(annotations)):
+                okImages += 1
+                cv2.imwrite("ok_images/"+data.get_test_image_name(idx), image)
+                with open("ok_images/"+file_name+".json","w") as file:
+                    metadata={}
+                    metadata["annotation"]=annotations
+                    metadata["detections"]=det
+                    json.dump(metadata, file)
 
         tpP += len(filteredMatches)
         fpP += len(detections) - len(filteredMatches)
         fnP += len(annotations) - len(filteredMatches)
 
-    return tpP, fpP, fnP
+    return tpP, fpP, fnP, okImages
 
 
 def print_metrics(tpP, fpP, fnP):
@@ -93,12 +115,14 @@ def print_metrics(tpP, fpP, fnP):
         
 if __name__ == "__main__":
     basePath = sys.argv[1]
+    weightsOrType = dnn.check_if_type(sys.argv[3])
     data = dataset.DatasetDarknet(os.path.join(basePath,"obj.data"))
-    model = dnn.Yolo(os.path.join(basePath,sys.argv[2]),
-                     os.path.join(basePath,sys.argv[3]), 
+    model = dnn.Yolo(sys.argv[2],
+                     weightsOrType, 
                      data.get_labels(), (int(sys.argv[4]),int(sys.argv[5])), 0.5, 0.2)
     model.set_backend(cv2.dnn.DNN_BACKEND_CUDA, cv2.dnn.DNN_TARGET_CUDA)
     
-    tp, fp, fn = valid(model, data, 0.6, write_images=True)
+    tp, fp, fn, okImages = valid(model, data, 0.6, write_images=True)
+    print("ok images: {} Total Images: {}".format(okImages, data.len_test()))
     print_metrics(tp, fp, fn)
     
